@@ -25,13 +25,13 @@ body.dark {
     top: 10px;
     right: 10px;
     cursor: pointer;
-    padding: 5px 10px; /* Adjust padding */
-    font-size: 14px;   /* Ensure text fits properly */
+    padding: 5px 10px;
+    font-size: 14px;
     background-color: #444;
     color: #fff;
     border: none;
     border-radius: 5px;
-    white-space: nowrap; /* Prevent text from breaking into multiple lines */
+    white-space: nowrap;
 }
 
 .toggle-debug {
@@ -39,15 +39,14 @@ body.dark {
     top: 10px;
     left: 10px;
     cursor: pointer;
-    padding: 5px 10px; /* Adjust padding */
-    font-size: 14px;   /* Ensure text fits properly */
+    padding: 5px 10px;
+    font-size: 14px;
     background-color: #444;
     color: #fff;
     border: none;
     border-radius: 5px;
-    white-space: nowrap; /* Prevent text from breaking into multiple lines */
+    white-space: nowrap;
 }
-
 
 .container {
     padding: 20px;
@@ -98,13 +97,15 @@ body.dark {
     height: 30px;
 }
 
-.debug-info {
+#debug-info {
+    display: none; /* Hidden by default */
     margin-top: 20px;
     padding: 10px;
     font-size: 14px;
     border: 1px solid #ccc;
     border-radius: 5px;
     background-color: #f0f0f0;
+    color: red; /* Debug text in red */
     text-align: left;
     max-width: 600px;
     margin-left: auto;
@@ -114,8 +115,4 @@ body.dark {
 .score {
     font-size: 18px;
     margin-top: 10px;
-}
-
-#debug-info {
-    display: block;
 }

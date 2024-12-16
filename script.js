@@ -13,7 +13,7 @@ let correctCount = 0;
 let incorrectCount = 0;
 let currentIPA = null;
 let lastAudio = null;
-let debugEnabled = true; // Debug info is initially visible
+let debugEnabled = false; // Debug info is initially visible
 
 // Theme switching
 themeSwitch.addEventListener('click', () => {
@@ -21,9 +21,9 @@ themeSwitch.addEventListener('click', () => {
     themeSwitch.textContent = body.classList.contains('dark') ? 'Switch to Light Theme' : 'Switch to Dark Theme';
 });
 
-// Toggle debug info visibility
+// Toggle Debug Info
 toggleDebugButton.addEventListener("click", () => {
-    debugEnabled = !debugEnabled;
+    debugEnabled = !debugEnabled; // Toggle visibility
     debugInfo.style.display = debugEnabled ? "block" : "none";
     toggleDebugButton.textContent = debugEnabled ? "Hide Debug Info" : "Show Debug Info";
 });
@@ -83,10 +83,10 @@ function updateScore() {
     scoreDisplay.textContent = `Correct: ${correctCount} | Incorrect: ${incorrectCount}`;
 }
 
+//debug info updater
 function updateDebugInfo(message) {
     if (debugEnabled) {
         const time = new Date().toLocaleTimeString();
         debugInfo.innerHTML = `<strong>Debug Info (${time}):</strong><br>${message}`;
     }
 }
-
