@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPA Sound Guessing Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button id="theme-switch" class="theme-switch">Switch to Dark Theme</button>
+    <button id="toggle-debug" class="toggle-debug">Toggle Debug Info</button>
+    <div class="container">
+        <h1 id="title">IPA Sound Guessing Game</h1>
+        <audio id="audio-player" controls hidden></audio>
+        <div class="center-buttons">
+            <button class="button" id="play-button" onclick="playSound()">Play Sound</button>
+            <button class="button" id="repeat-button" onclick="repeatSound()">Repeat Sound</button>
+        </div>
+        <div id="ipa-buttons" class="grid-container"></div>
+        <div id="feedback" class="feedback"></div>
+        <div id="score" class="score">Correct: 0 | Incorrect: 0</div>
+        <div id="debug-info" class="debug-info"></div>
+    </div>
+
+    <!-- External JavaScript Files -->
+    <script src="sounds.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
