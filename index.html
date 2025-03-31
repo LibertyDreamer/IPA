@@ -63,8 +63,8 @@
   <button onclick="repeatSound()">Repeat Sound</button>
   <div class="grid" id="ipa-buttons"></div>
   <div class="score">
-  Correct: <span id="correct">0</span> | Incorrect: <span id="incorrect">0</span>
-</div>
+    Correct: <span id="correct">0</span> | Incorrect: <span id="incorrect">0</span>
+  </div>
   <div id="feedback"></div>
 
   <script>
@@ -82,7 +82,14 @@
     let correct = 0;
     let incorrect = 0;
     let audioBuffer = null;
-    let fragmentRanges = [];
+
+    // <<< SIMPLE FRAGMENT RANGES START/END ARRAY >>>
+    const fragmentRanges = [
+      [1.900, 3.050],
+      [2.950, 3.900],
+      [3.800, 5.000],
+      // continue manually...
+    ];
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -91,21 +98,6 @@
       .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
       .then(buffer => {
         audioBuffer = buffer;
-
-        const jsonDurations = [
-          900, 600, 700, 600, 700, 650, 650, 650, 650, 650,
-          650, 650, 700, 800, 700, 850, 850, 850, 850, 850,
-          850, 650, 500, 700, 800, 650, 800, 860, 940, 960,
-          960, 460, 700, 700, 900, 900, 900, 900, 800, 900,
-          700, 740, 740, 720, 760, 700
-        ];
-
-        let start = 0.7;
-        fragmentRanges = jsonDurations.map(duration => {
-          const range = [start, start + duration / 1000];
-          start = range[1];
-          return range;
-        });
       })
       .catch(e => console.error("Failed to load audio:", e));
 
