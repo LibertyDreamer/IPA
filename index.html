@@ -1,29 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPA Sound Guessing Game</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IPA Sound Guessing Game</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #f8f8f8;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(8, 50px);
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .grid button {
+      padding: 10px;
+      font-size: 18px;
+    }
+    .score {
+      margin-top: 20px;
+    }
+    #feedback {
+      margin-top: 10px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-    <button id="theme-switch" class="theme-switch">Switch to Dark Theme</button>
-    <button id="toggle-debug" class="toggle-debug">Toggle Debug Info</button>
-    <div class="container">
-        <h1 id="title">IPA Sound Guessing Game</h1>
-        <audio id="audio-player" controls hidden></audio>
-        <div class="center-buttons">
-            <button class="button" id="play-button" onclick="playSound()">Play Sound</button>
-            <button class="button" id="repeat-button" onclick="repeatSound()">Repeat Sound</button>
-        </div>
-        <div id="ipa-buttons" class="grid-container"></div>
-        <div id="feedback" class="feedback"></div>
-        <div id="score" class="score">Correct: 0 | Incorrect: 0</div>
-        <div id="debug-info" class="debug-info"></div>
-    </div>
+  <h1>IPA Sound Guessing Game</h1>
+  <button onclick="playNewSound()">Play New Sound</button>
+  <button onclick="repeatSound()">Repeat Sound</button>
+  <div class="grid" id="ipa-buttons"></div>
+  <div class="score">
+    Correct: <span id="correct">0</span> | Incorrect: <span id="incorrect">0</span>
+  </div>
+  <div id="feedback"></div>
 
-    <!-- External JavaScript Files -->
-    <script src="sounds.js"></script>
-    <script src="script.js"></script>
+  <audio id="player" src="phonemes.mp3"></audio>
+
+  <script>
+    const ipaSymbols = [
+      'i', 'ɪ', 'eɪ', 'ɛ', 'æ', 'ə', 'ʌ', 'ɑ',
+      'u', 'ʊ', 'oʊ', 'ɔ', 'aɪ', 'aʊ', 'ɔɪ',
+      'p', 'b', 't', 'd', 'k', 'g',
+      'ʈ', 'ʔ', 'f', 'v', 'θ', 'ð', 's',
+      'z', 'ʃ', 'ʒ', 'h', 'tʃ', 'dʒ', 'n',
+      'm', 'ŋ', 'l', 'r', 'w', 'j', 'ʒ̠',
+      'ə', 'ɪɹ', 'ɛɹ', 'ɑɹ', 'ɔɹ', 'aɹ'
+    ];
+
+    const timeRanges = [
+      [0, 979], [979, 1958], [1958, 2937], [2937, 3916], [3916, 4895],
+      [4895, 5874], [5874, 6853], [6853, 7832], [7832, 8811], [8811, 9790],
+      [9790, 10769], [10769, 11748], [11748, 12727], [12727, 13706], [13706, 14685],
+      [14685, 15664], [15664, 16643], [16643, 17622], [17622, 18601], [18601, 19580],
+      [19580, 20559], [20559, 21538], [21538, 22517], [22517, 23496], [23496, 24475],
+      [24475, 25454], [25454, 26433], [26433, 27412], [27412, 28391], [28391, 29370],
+      [29370, 30349], [30349, 31328], [31328, 32307], [32307, 33286], [33286, 34265],
+      [34265, 35244], [35244, 36223], [36223, 37202], [37202, 38181], [38181, 39160],
+      [39160, 40139], [40139, 41118], [41118, 42097], [42097, 43076], [43076, 44055],
+      [44055, 45034], [45034, 46013], [46013, 46992]
+    ];
+
+    let correct = 0;
+    let incorrect = 0;
+    let currentSoundIndex = -1;
+
+    const audio = document.getElementById('player');
+
+    function playFragment(start, end) {
+      audio.currentTime = start / 1000;
+      audio.play();
+      const stopAt = end / 1000;
+      const checkTime = () => {
+        if (audio.currentTime >= stopAt) {
+          audio.pause();
+          audio.removeEventListener('timeupdate', checkTime);
+        }
+      };
+      audio.addEventListener('timeupdate', checkTime);
+    }
+
+    function playNewSound() {
+      currentSoundIndex = Math.floor(Math.random() * ipaSymbols.length);
+      playFragment(...timeRanges[currentSoundIndex]);
+      document.getElementById('feedback').innerText = '';
+    }
+
+    function repeatSound() {
+      if (currentSoundIndex >= 0) {
+        playFragment(...timeRanges[currentSoundIndex]);
+      }
+    }
+
+    function guess(symbol) {
+      const correctSymbol = ipaSymbols[currentSoundIndex];
+      if (symbol === correctSymbol) {
+        correct++;
+        document.getElementById('correct').innerText = correct;
+        document.getElementById('feedback').innerText = '✅ Correct!';
+        setTimeout(playNewSound, 1000);
+      } else {
+        incorrect++;
+        document.getElementById('incorrect').innerText = incorrect;
+        document.getElementById('feedback').innerText = '❌ Try again';
+      }
+    }
+
+    const buttonsContainer = document.getElementById('ipa-buttons');
+    ipaSymbols.forEach(symbol => {
+      const btn = document.createElement('button');
+      btn.innerText = symbol;
+      btn.onclick = () => guess(symbol);
+      buttonsContainer.appendChild(btn);
+    });
+  </script>
 </body>
 </html>
