@@ -67,68 +67,53 @@
   </div>
   <div id="feedback"></div>
 
-  <audio id="player" src="phonemes.mp3" preload="auto"></audio>
-
   <script>
     const ipaSymbols = [
-      'i', 'ɪ', 'eɪ', 'ɛ', 'æ', 'ə', 'ʌ',
-      'ɑ', 'u', 'ʊ', 'oʊ', 'ɔ', 'aɪ', 'aʊ',
-      'ɔɪ', 'p', 'b', 't', 'd', 'k', 'g',
-      't̬', 'ʔ', 'f', 'v', 'θ', 'ð', 's',
-      'z', 'ʃ', 'ʒ', 'h', 'tʃ', 'dʒ', 'n',
-      'm', 'ŋ', 'l', 'r', 'w', 'j', 'ɝ',
+      'i', 'ɪ', 'eɪ', 'ɛ', 'æ', 'ə', 'ʌ', 'ɑ', 'u', 'ʊ', 'oʊ', 'ɔ', 'aɪ', 'aʊ',
+      'ɔɪ', 'p', 'b', 't', 'd', 'k', 'g', 't̬', 'ʔ', 'f', 'v', 'θ', 'ð', 's',
+      'z', 'ʃ', 'ʒ', 'h', 'tʃ', 'dʒ', 'n', 'm', 'ŋ', 'l', 'r', 'w', 'j', 'ɝ',
       'ɚ', 'ɪr', 'ɛr', 'ɑr', 'ɔr', 'aɪr'
     ];
 
-    const timeRanges = [
-      [2763, 3684], [3684, 4605], [4605, 5526], [5526, 6447], [6447, 7368],
-      [7368, 8289], [8289, 9210], [9210, 10131], [10131, 11052], [11052, 11973],
-      [11973, 12894], [12894, 13815], [13815, 14736], [14736, 15657], [15657, 16578],
-      [16578, 17499], [17499, 18420], [18420, 19341], [19341, 20262], [20262, 21183],
-      [21183, 22104], [22104, 23025], [23025, 23946], [23946, 24867], [24867, 25788],
-      [25788, 26709], [26709, 27630], [27630, 28551], [28551, 29472], [29472, 30393],
-      [30393, 31314], [31314, 32235], [32235, 33156], [33156, 34077], [34077, 34998],
-      [34998, 35919], [35919, 36840], [36840, 37761], [37761, 38682], [38682, 39603],
-      [39603, 40524], [40524, 41445], [41445, 42366], [42366, 43287], [43287, 44208],
-      [44208, 45129], [45129, 46050], [46050, 46971]
-    ];
-
+    let currentSoundIndex = -1;
     let correct = 0;
     let incorrect = 0;
-    let currentSoundIndex = -1;
+    let audioBuffer = null;
+    const fragmentCount = ipaSymbols.length;
+    const totalDuration = 60000; // estimated in ms, update with exact duration of your audio if known
+    const skipEnd = 4000; // skip final phrase
+    const usableDuration = totalDuration - skipEnd;
+    const fragmentDuration = usableDuration / fragmentCount / 1000; // in seconds
 
-    const audio = document.getElementById('player');
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-    function playFragment(start, end) {
-      if (audio.readyState >= 2) {
-        audio.currentTime = start / 1000;
-        audio.play();
-      } else {
-        audio.addEventListener('canplaythrough', () => {
-          audio.currentTime = start / 1000;
-          audio.play();
-        }, { once: true });
-      }
+    fetch("phonemes.mp3")
+      .then(response => response.arrayBuffer())
+      .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+      .then(buffer => {
+        audioBuffer = buffer;
+        console.log("Audio loaded and decoded.");
+      })
+      .catch(e => console.error("Failed to load audio:", e));
 
-      const stopAt = end / 1000;
-      const checkTime = () => {
-        if (audio.currentTime >= stopAt) {
-          audio.pause();
-          audio.removeEventListener('timeupdate', checkTime);
-        }
-      };
-      audio.addEventListener('timeupdate', checkTime);
+    function playFragment(index) {
+      if (!audioBuffer) return;
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      const start = index * fragmentDuration;
+      source.connect(audioContext.destination);
+      source.start(0, start, fragmentDuration);
     }
 
     function playNewSound() {
       currentSoundIndex = Math.floor(Math.random() * ipaSymbols.length);
-      playFragment(...timeRanges[currentSoundIndex]);
+      playFragment(currentSoundIndex);
       document.getElementById('feedback').innerText = '';
     }
 
     function repeatSound() {
       if (currentSoundIndex >= 0) {
-        playFragment(...timeRanges[currentSoundIndex]);
+        playFragment(currentSoundIndex);
       }
     }
 
