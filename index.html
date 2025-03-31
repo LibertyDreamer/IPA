@@ -21,7 +21,7 @@
       font-size: 16px;
       border: none;
       border-radius: 6px;
-      background-color: #007bff;
+      background-color: #4287f5;
       color: white;
       cursor: pointer;
     }
@@ -73,7 +73,7 @@
       'ɑ', 'u', 'ʊ', 'oʊ', 'ɔ', 'aɪ', 'aʊ',
       'ɔɪ', 'p', 'b', 't', 'd', 'k', 'g', 
       't̬', 'ʔ', 'f', 'v', 'θ', 'ð', 's',
-      'z', 'ʃ', 'ʒ', 'h', 'tʃ', 'dʒ', 'n',
+      'z', 'ʃ', 'ʒ', 'h', 'tʃ', 'dʒ', 'n', 
       'm', 'ŋ', 'l', 'r', 'w', 'j', 'ɝ',
       'ɚ', 'ɪr', 'ɛr', 'ɑr', 'ɔr', 'aɪr'
     ];
@@ -153,7 +153,7 @@ const usableDuration = totalDuration - skipEnd;
   btn.innerText = symbol;
   btn.onclick = () => guess(symbol);
   if (index < 13 || index >= ipaSymbols.length - 7) {
-    btn.style.backgroundColor = 'red';
+    btn.style.backgroundColor = '#d44'; btn.style.boxShadow = '0 0 4px #0003';
   }
   buttonsContainer.appendChild(btn);
 });
