@@ -82,44 +82,37 @@
     let correct = 0;
     let incorrect = 0;
     let audioBuffer = null;
-let fragmentDurations = [];
-let fragmentRanges = [];
-const fragmentCount = ipaSymbols.length;
-const totalDuration = 60000;
-const skipEnd = 4000;
-const usableDuration = totalDuration - skipEnd;
+    let fragmentRanges = [];
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
     fetch("phonemes.mp3")
-  .then(response => response.arrayBuffer())
-  .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
-  .then(buffer => {
-    audioBuffer = buffer;
-    fragmentRanges = [
-      [1.80, 3.00], [3, 3.80], [3.80, 4.90], [4.90, 5.80], [3.22, 3.83],
-      [3.83, 4.47], [4.47, 5.10], [5.10, 5.74], [5.74, 6.38], [6.38, 7.02],
-      [7.02, 7.66], [7.66, 8.30], [8.30, 8.93], [8.93, 9.58], [9.58, 10.22],
-      [10.22, 10.87], [10.87, 11.52], [11.52, 12.16], [12.16, 12.80], [12.80, 13.44],
-      [13.44, 14.08], [14.08, 14.72], [14.72, 15.36], [15.36, 16.00], [16.00, 16.64],
-      [16.64, 17.28], [17.28, 17.92], [17.92, 18.56], [18.56, 19.20], [19.20, 19.84],
-      [19.84, 20.48], [20.48, 21.12], [21.12, 21.76], [21.76, 22.40], [22.40, 23.04],
-      [23.04, 23.68], [23.68, 24.32], [24.32, 24.96], [24.96, 25.60], [25.60, 26.24],
-      [26.24, 26.88], [26.88, 27.52], [27.52, 28.16], [28.16, 28.80], [28.80, 29.44],
-      [29.44, 30.08], [30.08, 30.72], [30.72, 31.36]
-    ];
-  })
-  .catch(e => console.error("Failed to load audio:", e));
+      .then(response => response.arrayBuffer())
+      .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+      .then(buffer => {
+        audioBuffer = buffer;
+        const phonemeData = [
+          0.70, 0.90, 1.10, 1.25, 1.40, 1.55, 1.70, 1.85, 2.00, 2.15,
+          2.30, 2.45, 2.60, 2.80, 3.00, 3.20, 3.40, 3.60, 3.80, 4.00,
+          4.20, 4.40, 4.60, 4.80, 5.00, 5.20, 5.40, 5.60, 5.80, 6.00,
+          6.20, 6.40, 6.60, 6.80, 7.00, 7.20, 7.40, 7.60, 7.80, 8.00,
+          8.20, 8.40, 8.60, 8.80, 9.00, 9.20, 9.40, 9.60, 9.80, 10.00
+        ];
+        fragmentRanges = phonemeData.map((start, i) => {
+          const end = phonemeData[i + 1] || (start + 0.5);
+          return [start, end];
+        });
+      })
+      .catch(e => console.error("Failed to load audio:", e));
 
     function playFragment(index) {
-  if (!audioBuffer || !fragmentRanges[index]) return;
-  const [start, end] = fragmentRanges[index];
-  const source = audioContext.createBufferSource();
-  source.buffer = audioBuffer;
-  source.connect(audioContext.destination);
-  source.start(0, start, end - start);
-  
-}
+      if (!audioBuffer || !fragmentRanges[index]) return;
+      const [start, end] = fragmentRanges[index];
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
+      source.start(0, start, end - start);
+    }
 
     function playNewSound() {
       currentSoundIndex = Math.floor(Math.random() * ipaSymbols.length);
@@ -149,14 +142,15 @@ const usableDuration = totalDuration - skipEnd;
 
     const buttonsContainer = document.getElementById('ipa-buttons');
     ipaSymbols.forEach((symbol, index) => {
-  const btn = document.createElement('button');
-  btn.innerText = symbol;
-  btn.onclick = () => guess(symbol);
-  if (index < 13 || index >= ipaSymbols.length - 7) {
-    btn.style.backgroundColor = '#d44'; btn.style.boxShadow = '0 0 4px #0003';
-  }
-  buttonsContainer.appendChild(btn);
-});
+      const btn = document.createElement('button');
+      btn.innerText = symbol;
+      btn.onclick = () => guess(symbol);
+      if (index < 13 || index >= ipaSymbols.length - 7) {
+        btn.style.backgroundColor = '#d44';
+        btn.style.boxShadow = '0 0 4px #0003';
+      }
+      buttonsContainer.appendChild(btn);
+    });
   </script>
 </body>
 </html>
