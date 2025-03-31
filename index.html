@@ -64,7 +64,7 @@
   <div class="grid" id="ipa-buttons"></div>
   $1
 <div class="score">
-  Fragment Begin: <span id="frag-start">0.000</span>s | End: <span id="frag-end">0.000</span>s
+  Correct: <span id="correct">0</span> | Incorrect: <span id="incorrect">0</span>
 </div>
   <div id="feedback"></div>
 
@@ -116,8 +116,7 @@ const usableDuration = totalDuration - skipEnd;
   source.buffer = audioBuffer;
   source.connect(audioContext.destination);
   source.start(0, start, end - start);
-  document.getElementById('frag-start').innerText = start.toFixed(3);
-  document.getElementById('frag-end').innerText = end.toFixed(3);
+  
 }
 
     function playNewSound() {
@@ -147,12 +146,15 @@ const usableDuration = totalDuration - skipEnd;
     }
 
     const buttonsContainer = document.getElementById('ipa-buttons');
-    ipaSymbols.forEach(symbol => {
-      const btn = document.createElement('button');
-      btn.innerText = symbol;
-      btn.onclick = () => guess(symbol);
-      buttonsContainer.appendChild(btn);
-    });
+    ipaSymbols.forEach((symbol, index) => {
+  const btn = document.createElement('button');
+  btn.innerText = symbol;
+  btn.onclick = () => guess(symbol);
+  if (index < 13 || index >= ipaSymbols.length - 7) {
+    btn.style.backgroundColor = 'red';
+  }
+  buttonsContainer.appendChild(btn);
+});
   </script>
 </body>
 </html>
