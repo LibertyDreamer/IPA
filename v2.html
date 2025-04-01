@@ -183,24 +183,39 @@
     }
 
     function checkIPA() {
-      const userInput = document.getElementById('ipaInput').value.trim().replaceAll('/', '');
-      const result = document.getElementById('result');
-      const correct = correctTranscription.trim().replaceAll('/', '');
+  const userRaw = document.getElementById('ipaInput').value.trim().toLowerCase();
+  const result = document.getElementById('result');
+  const correctRaw = correctTranscription.trim().toLowerCase();
 
-      if (!correct) {
-        result.innerText = "❗ Load a word first!";
-        result.style.color = 'orange';
-        return;
-      }
+  const clean = (str) =>
+    str.replaceAll('/', '')
+       .replaceAll('ː', '')
+       .replaceAll(' ', '')
+       .replaceAll(''', '');
 
-      if (userInput === correct) {
-        result.innerText = "✅ Correct!";
-        result.style.color = 'green';
-      } else {
-        result.innerText = `❌ Incorrect. Correct: ${correctTranscription}`;
-        result.style.color = 'red';
-      }
-    }
+  let user = clean(userRaw);
+  let correct = clean(correctRaw);
+
+  // Allow trailing 'r' flexibility (American vs British)
+  if (user.endsWith('r') && !correct.endsWith('r')) {
+    user = user.slice(0, -1);
+  }
+
+  if (!correct) {
+    result.innerText = "❗ Load a word first!";
+    result.style.color = 'orange';
+    return;
+  }
+
+  if (user === correct) {
+    result.innerText = "✅ Correct!";
+    result.style.color = 'green';
+  } else {
+    result.innerText = `❌ Incorrect. Correct: ${correctTranscription}`;
+    result.style.color = 'red';
+  }
+}
+
 
     buildIpaKeyboard();
   </script>
