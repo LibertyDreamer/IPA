@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word to IPA Transcription Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IPA Transcription Game</title>
   <style>
     body {
       font-family: sans-serif;
@@ -91,7 +91,7 @@
   <script>
     let currentWord = '';
     let correctTranscription = '';
-    let currentAudioUrl = '';
+    let currentAudioUrls = [];
     let wordInfoVisible = false;
     let allTranscriptions = [];
 
@@ -120,13 +120,23 @@
       return words[Math.floor(Math.random() * words.length)];
     }
 
+    async function fetchValidWord() {
+      for (let i = 0; i < 10; i++) {
+        const word = await getRandomWord();
+        const data = await fetchWordData(word);
+        if (data && data.length && data[0].phonetics.some(p => p.text)) {
+          return data;
+        }
+      }
+      return null;
+    }
+
     async function fetchWordData(word) {
       try {
         const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
         const data = await res.json();
         return data;
-      } catch (err) {
-        console.error(err);
+      } catch {
         return null;
       }
     }
@@ -137,33 +147,29 @@
       wordInfoVisible = false;
       document.getElementById('ipaInput').value = '';
 
-      currentWord = await getRandomWord();
-      const wordDataArr = await fetchWordData(currentWord);
-
-      if (!wordDataArr || wordDataArr.title || wordDataArr.length === 0) {
-        document.getElementById('result').innerText = "❌ Word not found. Try another one.";
+      const wordDataArr = await fetchValidWord();
+      if (!wordDataArr) {
+        document.getElementById('result').innerText = "❌ Couldn't load a valid word.";
         document.getElementById('result').style.color = 'red';
         return;
       }
 
       const wordData = wordDataArr[0];
-      document.getElementById('displayWord').innerText = wordData.word;
+      currentWord = wordData.word;
+      document.getElementById('displayWord').innerText = currentWord;
 
       const phoneticsText = wordData.phonetics.map(p => p.text).filter(Boolean);
-      const audioUrls = wordData.phonetics.map(p => p.audio).filter(Boolean);
-      correctTranscription = phoneticsText[0] || '';
+      currentAudioUrls = wordData.phonetics.map(p => p.audio).filter(Boolean);
       allTranscriptions = phoneticsText.map(p =>
         p.toLowerCase().replaceAll('/', '').replaceAll('ː', '').replaceAll('ʼ', '').replaceAll("'", '').replaceAll(' ', '')
       );
+      correctTranscription = allTranscriptions[0] || '';
 
       document.getElementById('phonetics').innerText = phoneticsText.join(', ');
-      currentAudioUrl = audioUrls;
-      repeatWord();
-
       document.getElementById('origin').innerText = wordData.origin || '—';
+
       const meaningsDiv = document.getElementById('meanings');
       meaningsDiv.innerHTML = '';
-
       wordDataArr.forEach(entry => {
         entry.meanings.forEach(m => {
           const section = document.createElement('div');
@@ -179,26 +185,17 @@
         });
       });
 
-      const sourceSet = new Set();
-      wordDataArr.forEach(entry => {
-        (entry.sourceUrls || []).forEach(url => sourceSet.add(url));
-      });
-
-      if (sourceSet.size > 0) {
-        const sourcesHTML = [...sourceSet].map(url => `<a href="${url}" target="_blank">${url}</a>`).join(', ');
-        meaningsDiv.insertAdjacentHTML('beforeend', `<p style="font-size:0.9em;margin-top:1em;color:#555">🔗 Source(s): ${sourcesHTML}</p>`);
-      }
+      repeatWord();
     }
 
     function repeatWord() {
-      const audioEntries = Array.isArray(currentAudioUrl) ? currentAudioUrl : [];
-      if (audioEntries.length > 0) {
-        let index = 0;
+      if (currentAudioUrls.length > 0) {
+        let i = 0;
         const playNext = () => {
-          if (index >= audioEntries.length) return;
-          const audio = new Audio(audioEntries[index]);
+          if (i >= currentAudioUrls.length) return;
+          const audio = new Audio(currentAudioUrls[i]);
           audio.onended = () => {
-            index++;
+            i++;
             playNext();
           };
           audio.play();
@@ -235,10 +232,10 @@
         result.innerText = "❗ Load a word first!";
         result.style.color = 'orange';
       } else if (matchFound) {
-        result.innerText = "✅ Correct!";
+        result.innerText = "✅ Correct! /" + correctTranscription + "/";
         result.style.color = 'green';
       } else {
-        result.innerText = `❌ Incorrect. Correct: /${allTranscriptions[0]}/`;
+        result.innerText = `❌ Incorrect. Correct: /${correctTranscription}/`;
         result.style.color = 'red';
       }
     }
