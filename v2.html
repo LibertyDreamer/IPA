@@ -22,6 +22,7 @@
       background: #3a86ff;
       color: white;
       cursor: pointer;
+      margin: 5px;
     }
     input {
       padding: 10px;
@@ -30,11 +31,33 @@
       border: 1px solid #ccc;
       border-radius: 5px;
       width: 200px;
+      text-align: center;
     }
     .result {
       margin-top: 1rem;
       font-size: 20px;
       font-weight: bold;
+    }
+    .ipa-keyboard {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .ipa-keyboard button {
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+      border-radius: 50%;
+    }
+    .definition {
+      margin-top: 1rem;
+      font-style: italic;
+      color: #555;
     }
   </style>
 </head>
@@ -44,36 +67,73 @@
   <br/>
   <input type="text" id="ipaInput" placeholder="Write IPA transcription..." />
   <button onclick="checkIPA()">Submit</button>
+  <div class="ipa-keyboard" id="ipaKeyboard"></div>
   <div class="result" id="result"></div>
+  <div class="definition" id="definition"></div>
 
   <script>
     let currentWord = '';
     let correctTranscription = '';
+
+    const ipaSymbols = ['i', 'ɪ', 'e', 'ɛ', 'æ', 'ə', 'ʌ', 'ɑ', 'u', 'ʊ', 'o', 'ɔ',
+                        'aɪ', 'aʊ', 'ɔɪ', 'p', 'b', 't', 'd', 'k', 'g', 'f', 'v',
+                        'θ', 'ð', 's', 'z', 'ʃ', 'ʒ', 'h', 'tʃ', 'dʒ', 'n', 'm', 'ŋ',
+                        'l', 'r', 'w', 'j'];
+
+    function buildIpaKeyboard() {
+      const keyboard = document.getElementById('ipaKeyboard');
+      keyboard.innerHTML = '';
+      ipaSymbols.forEach(symbol => {
+        const btn = document.createElement('button');
+        btn.textContent = symbol;
+        btn.onclick = () => {
+          const input = document.getElementById('ipaInput');
+          input.value += symbol;
+          input.focus();
+        };
+        keyboard.appendChild(btn);
+      });
+    }
 
     async function getRandomWord() {
       const words = ["cat", "dog", "fish", "phone", "car", "bird", "school", "light", "shoe"];
       return words[Math.floor(Math.random() * words.length)];
     }
 
-    async function fetchIPA(word) {
+    async function fetchWordData(word) {
       try {
         const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
         const data = await res.json();
-        const phonetics = data[0].phonetics.find(p => p.text);
-        return phonetics?.text || '';
+        const phoneticEntry = data[0].phonetics.find(p => p.text && p.audio);
+        const phoneticText = phoneticEntry?.text || '';
+        const audioUrl = phoneticEntry?.audio || '';
+        const definition = data[0].meanings[0]?.definitions[0]?.definition || '';
+        return { phoneticText, audioUrl, definition };
       } catch (err) {
         console.error(err);
-        return '';
+        return { phoneticText: '', audioUrl: '', definition: '' };
       }
     }
 
     async function playWord() {
       document.getElementById('result').innerText = '';
+      document.getElementById('definition').innerText = '';
       currentWord = await getRandomWord();
-      correctTranscription = await fetchIPA(currentWord);
-      const utterance = new SpeechSynthesisUtterance(currentWord);
-      utterance.lang = 'en-US';
-      speechSynthesis.speak(utterance);
+      const data = await fetchWordData(currentWord);
+      correctTranscription = data.phoneticText;
+
+      if (data.audioUrl) {
+        const audio = new Audio(data.audioUrl);
+        audio.play();
+      } else {
+        const fallback = new SpeechSynthesisUtterance(currentWord);
+        fallback.lang = 'en-US';
+        speechSynthesis.speak(fallback);
+      }
+
+      if (data.definition) {
+        document.getElementById('definition').innerText = `Definition: ${data.definition}`;
+      }
     }
 
     function checkIPA() {
@@ -81,6 +141,7 @@
       const result = document.getElementById('result');
       if (!correctTranscription) {
         result.innerText = "❗ Load a word first!";
+        result.style.color = 'orange';
         return;
       }
       if (userInput === correctTranscription) {
@@ -91,6 +152,8 @@
         result.style.color = 'red';
       }
     }
+
+    buildIpaKeyboard();
   </script>
 </body>
 </html>
