@@ -143,18 +143,13 @@
 
       document.getElementById('displayWord').innerText = wordData.word;
 
-      // Display phonetics
       const phonetics = wordData.phonetics.map(p => p.text).filter(Boolean).join(', ');
       correctTranscription = wordData.phonetics.find(p => p.text)?.text || '';
       document.getElementById('phonetics').innerText = phonetics;
 
-      // Save audio for repeat button
       currentAudioUrl = wordData.phonetics.find(p => p.audio)?.audio || '';
-
-      // Play audio if available
       repeatWord();
 
-      // Prepare other info (but don't show until requested)
       document.getElementById('origin').innerText = wordData.origin || '—';
       const meaningsDiv = document.getElementById('meanings');
       meaningsDiv.innerHTML = '';
@@ -183,39 +178,38 @@
     }
 
     function checkIPA() {
-  const userRaw = document.getElementById('ipaInput').value.trim().toLowerCase();
-  const result = document.getElementById('result');
-  const correctRaw = correctTranscription.trim().toLowerCase();
+      const userRaw = document.getElementById('ipaInput').value.trim().toLowerCase();
+      const result = document.getElementById('result');
+      const correctRaw = correctTranscription.trim().toLowerCase();
 
-  const clean = (str) =>
-    str.replaceAll('/', '')
-       .replaceAll('ː', '')
-       .replaceAll(' ', '')
-       .replaceAll(''', '');
+      const clean = (str) =>
+        str.replaceAll('/', '')
+           .replaceAll('ː', '')
+           .replaceAll('ʼ', '')
+           .replaceAll(\"'\", '')
+           .replaceAll(' ', '');
 
-  let user = clean(userRaw);
-  let correct = clean(correctRaw);
+      let user = clean(userRaw);
+      let correct = clean(correctRaw);
 
-  // Allow trailing 'r' flexibility (American vs British)
-  if (user.endsWith('r') && !correct.endsWith('r')) {
-    user = user.slice(0, -1);
-  }
+      if (user.endsWith('r') && !correct.endsWith('r')) {
+        user = user.slice(0, -1);
+      }
 
-  if (!correct) {
-    result.innerText = "❗ Load a word first!";
-    result.style.color = 'orange';
-    return;
-  }
+      if (!correct) {
+        result.innerText = "❗ Load a word first!";
+        result.style.color = 'orange';
+        return;
+      }
 
-  if (user === correct) {
-    result.innerText = "✅ Correct!";
-    result.style.color = 'green';
-  } else {
-    result.innerText = `❌ Incorrect. Correct: ${correctTranscription}`;
-    result.style.color = 'red';
-  }
-}
-
+      if (user === correct) {
+        result.innerText = "✅ Correct!";
+        result.style.color = 'green';
+      } else {
+        result.innerText = `❌ Incorrect. Correct: ${correctTranscription}`;
+        result.style.color = 'red';
+      }
+    }
 
     buildIpaKeyboard();
   </script>
