@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word to IPA Transcription Game</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #f0f4f8;
+      padding: 2rem;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+      background: #3a86ff;
+      color: white;
+      cursor: pointer;
+    }
+    input {
+      padding: 10px;
+      font-size: 18px;
+      margin: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 200px;
+    }
+    .result {
+      margin-top: 1rem;
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Transcribe the Word to IPA</h1>
+  <button onclick="playWord()">🔊 Play Word</button>
+  <br/>
+  <input type="text" id="ipaInput" placeholder="Write IPA transcription..." />
+  <button onclick="checkIPA()">Submit</button>
+  <div class="result" id="result"></div>
+
+  <script>
+    let currentWord = '';
+    let correctTranscription = '';
+
+    async function getRandomWord() {
+      const words = ["cat", "dog", "fish", "phone", "car", "bird", "school", "light", "shoe"];
+      return words[Math.floor(Math.random() * words.length)];
+    }
+
+    async function fetchIPA(word) {
+      try {
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+        const data = await res.json();
+        const phonetics = data[0].phonetics.find(p => p.text);
+        return phonetics?.text || '';
+      } catch (err) {
+        console.error(err);
+        return '';
+      }
+    }
+
+    async function playWord() {
+      document.getElementById('result').innerText = '';
+      currentWord = await getRandomWord();
+      correctTranscription = await fetchIPA(currentWord);
+      const utterance = new SpeechSynthesisUtterance(currentWord);
+      utterance.lang = 'en-US';
+      speechSynthesis.speak(utterance);
+    }
+
+    function checkIPA() {
+      const userInput = document.getElementById('ipaInput').value.trim();
+      const result = document.getElementById('result');
+      if (!correctTranscription) {
+        result.innerText = "❗ Load a word first!";
+        return;
+      }
+      if (userInput === correctTranscription) {
+        result.innerText = "✅ Correct!";
+        result.style.color = 'green';
+      } else {
+        result.innerText = `❌ Incorrect. Correct: ${correctTranscription}`;
+        result.style.color = 'red';
+      }
+    }
+  </script>
+</body>
+</html>
