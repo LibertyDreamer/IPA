@@ -139,15 +139,21 @@
       currentWord = await getRandomWord();
       const wordData = await fetchWordData(currentWord);
 
-      if (!wordData) return;
+      if (!wordData || wordData.title) {
+        document.getElementById('result').innerText = "❌ Word not found. Try another one.";
+        document.getElementById('result').style.color = 'red';
+        return;
+      }
 
       document.getElementById('displayWord').innerText = wordData.word;
 
-      const phonetics = wordData.phonetics.map(p => p.text).filter(Boolean).join(', ');
-      correctTranscription = wordData.phonetics.find(p => p.text)?.text || '';
-      document.getElementById('phonetics').innerText = phonetics;
+      const phoneticsText = wordData.phonetics.map(p => p.text).filter(Boolean);
+      const audioUrls = wordData.phonetics.map(p => p.audio).filter(Boolean);
+      correctTranscription = phoneticsText[0] || '';
 
-      currentAudioUrl = wordData.phonetics.find(p => p.audio)?.audio || '';
+      document.getElementById('phonetics').innerText = phoneticsText.join(', ');
+      currentAudioUrl = audioUrls;
+
       repeatWord();
 
       document.getElementById('origin').innerText = wordData.origin || '—';
@@ -156,14 +162,37 @@
       wordData.meanings.forEach(m => {
         const section = document.createElement('div');
         section.innerHTML = `<h3>${m.partOfSpeech}</h3>` +
-          m.definitions.map(d => `<p><strong>Definition:</strong> ${d.definition}<br/><em>Example:</em> ${d.example || '—'}</p>`).join('');
+          m.definitions.map(d => `
+            <p><strong>Definition:</strong> ${d.definition}<br/>
+            <em>Example:</em> ${d.example || '—'}<br/>
+            <small><strong>Synonyms:</strong> ${d.synonyms?.join(', ') || '—'}</small><br/>
+            <small><strong>Antonyms:</strong> ${d.antonyms?.join(', ') || '—'}</small>
+            </p>
+          `).join('');
         meaningsDiv.appendChild(section);
       });
+
+      const sourceInfo = wordData.sourceUrls?.length
+        ? `<p style="font-size:0.9em;margin-top:1em;color:#555">🔗 Source: <a href="${wordData.sourceUrls[0]}" target="_blank">${wordData.sourceUrls[0]}</a></p>`
+        : '';
+      meaningsDiv.insertAdjacentHTML('beforeend', sourceInfo);
     }
 
     function repeatWord() {
-      if (currentAudioUrl) {
-        new Audio(currentAudioUrl).play();
+      const audioEntries = Array.isArray(currentAudioUrl) ? currentAudioUrl : [];
+
+      if (audioEntries.length > 0) {
+        let index = 0;
+        const playNext = () => {
+          if (index >= audioEntries.length) return;
+          const audio = new Audio(audioEntries[index]);
+          audio.onended = () => {
+            index++;
+            playNext();
+          };
+          audio.play();
+        };
+        playNext();
       } else if (currentWord) {
         const fallback = new SpeechSynthesisUtterance(currentWord);
         fallback.lang = 'en-US';
