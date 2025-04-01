@@ -93,6 +93,7 @@
     let correctTranscription = '';
     let currentAudioUrl = '';
     let wordInfoVisible = false;
+    let allTranscriptions = [];
 
     const ipaSymbols = ['i', 'ɪ', 'e', 'ɛ', 'æ', 'ə', 'ʌ', 'ɑ', 'u', 'ʊ', 'o', 'ɔ',
                         'aɪ', 'aʊ', 'ɔɪ', 'p', 'b', 't', 'd', 'k', 'g', 'f', 'v',
@@ -123,7 +124,7 @@
       try {
         const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
         const data = await res.json();
-        return data[0];
+        return data;
       } catch (err) {
         console.error(err);
         return null;
@@ -137,50 +138,60 @@
       document.getElementById('ipaInput').value = '';
 
       currentWord = await getRandomWord();
-      const wordData = await fetchWordData(currentWord);
+      const wordDataArr = await fetchWordData(currentWord);
 
-      if (!wordData || wordData.title) {
+      if (!wordDataArr || wordDataArr.title || wordDataArr.length === 0) {
         document.getElementById('result').innerText = "❌ Word not found. Try another one.";
         document.getElementById('result').style.color = 'red';
         return;
       }
 
+      const wordData = wordDataArr[0];
       document.getElementById('displayWord').innerText = wordData.word;
 
       const phoneticsText = wordData.phonetics.map(p => p.text).filter(Boolean);
       const audioUrls = wordData.phonetics.map(p => p.audio).filter(Boolean);
       correctTranscription = phoneticsText[0] || '';
+      allTranscriptions = phoneticsText.map(p =>
+        p.toLowerCase().replaceAll('/', '').replaceAll('ː', '').replaceAll('ʼ', '').replaceAll("'", '').replaceAll(' ', '')
+      );
 
       document.getElementById('phonetics').innerText = phoneticsText.join(', ');
       currentAudioUrl = audioUrls;
-
       repeatWord();
 
       document.getElementById('origin').innerText = wordData.origin || '—';
       const meaningsDiv = document.getElementById('meanings');
       meaningsDiv.innerHTML = '';
-      wordData.meanings.forEach(m => {
-        const section = document.createElement('div');
-        section.innerHTML = `<h3>${m.partOfSpeech}</h3>` +
-          m.definitions.map(d => `
-            <p><strong>Definition:</strong> ${d.definition}<br/>
-            <em>Example:</em> ${d.example || '—'}<br/>
-            <small><strong>Synonyms:</strong> ${d.synonyms?.join(', ') || '—'}</small><br/>
-            <small><strong>Antonyms:</strong> ${d.antonyms?.join(', ') || '—'}</small>
-            </p>
-          `).join('');
-        meaningsDiv.appendChild(section);
+
+      wordDataArr.forEach(entry => {
+        entry.meanings.forEach(m => {
+          const section = document.createElement('div');
+          section.innerHTML = `<h3>${m.partOfSpeech}</h3>` +
+            m.definitions.map(d => `
+              <p><strong>Definition:</strong> ${d.definition}<br/>
+              <em>Example:</em> ${d.example || '—'}<br/>
+              <small><strong>Synonyms:</strong> ${d.synonyms?.join(', ') || '—'}</small><br/>
+              <small><strong>Antonyms:</strong> ${d.antonyms?.join(', ') || '—'}</small>
+              </p>
+            `).join('');
+          meaningsDiv.appendChild(section);
+        });
       });
 
-      const sourceInfo = wordData.sourceUrls?.length
-        ? `<p style="font-size:0.9em;margin-top:1em;color:#555">🔗 Source: <a href="${wordData.sourceUrls[0]}" target="_blank">${wordData.sourceUrls[0]}</a></p>`
-        : '';
-      meaningsDiv.insertAdjacentHTML('beforeend', sourceInfo);
+      const sourceSet = new Set();
+      wordDataArr.forEach(entry => {
+        (entry.sourceUrls || []).forEach(url => sourceSet.add(url));
+      });
+
+      if (sourceSet.size > 0) {
+        const sourcesHTML = [...sourceSet].map(url => `<a href="${url}" target="_blank">${url}</a>`).join(', ');
+        meaningsDiv.insertAdjacentHTML('beforeend', `<p style="font-size:0.9em;margin-top:1em;color:#555">🔗 Source(s): ${sourcesHTML}</p>`);
+      }
     }
 
     function repeatWord() {
       const audioEntries = Array.isArray(currentAudioUrl) ? currentAudioUrl : [];
-
       if (audioEntries.length > 0) {
         let index = 0;
         const playNext = () => {
@@ -209,32 +220,25 @@
     function checkIPA() {
       const userRaw = document.getElementById('ipaInput').value.trim().toLowerCase();
       const result = document.getElementById('result');
-      const correctRaw = correctTranscription.trim().toLowerCase();
 
       const clean = (str) =>
-        str.replaceAll('/', '')
-           .replaceAll('ː', '')
-           .replaceAll('ʼ', '')
-           .replaceAll(' ', '');
+        str.replaceAll('/', '').replaceAll('ː', '').replaceAll('ʼ', '').replaceAll("'", '').replaceAll(' ', '');
 
       let user = clean(userRaw);
-      let correct = clean(correctRaw);
+      if (user.endsWith('r')) user = user.slice(0, -1);
 
-      if (user.endsWith('r') && !correct.endsWith('r')) {
-        user = user.slice(0, -1);
-      }
+      const matchFound = allTranscriptions.some(trans => {
+        return user === trans || user + 'r' === trans;
+      });
 
-      if (!correct) {
+      if (allTranscriptions.length === 0) {
         result.innerText = "❗ Load a word first!";
         result.style.color = 'orange';
-        return;
-      }
-
-      if (user === correct) {
+      } else if (matchFound) {
         result.innerText = "✅ Correct!";
         result.style.color = 'green';
       } else {
-        result.innerText = `❌ Incorrect. Correct: ${correctTranscription}`;
+        result.innerText = `❌ Incorrect. Correct: /${allTranscriptions[0]}/`;
         result.style.color = 'red';
       }
     }
