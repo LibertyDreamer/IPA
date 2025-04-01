@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>IPA Sound Guessing Game</title>
   <style>
     body {
@@ -51,9 +51,21 @@
       margin-top: 20px;
     }
     #feedback {
+      min-height: 30px;
       margin-top: 10px;
       font-size: 20px;
       font-weight: bold;
+      transition: opacity 0.3s ease;
+      opacity: 0.8;
+    }
+    .attribution {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #666;
+    }
+    .attribution a {
+      color: #444;
+      text-decoration: none;
     }
   </style>
 </head>
@@ -65,7 +77,17 @@
   <div class="score">
     Correct: <span id="correct">0</span> | Incorrect: <span id="incorrect">0</span>
   </div>
-  <div id="feedback"></div>
+  <div id="feedback">🎧 Your guess?</div>
+
+  <p class="attribution">
+    All phoneme audio from 
+    <a href="https://www.soundsamerican.net" target="_blank" rel="noopener noreferrer">
+      SoundsAmerican.net
+    </a>. Used with gratitude under 
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">
+      CC BY-NC-ND 4.0
+    </a>.
+  </p>
 
   <script>
     const ipaSymbols = [
@@ -84,54 +106,16 @@
     let audioBuffer = null;
 
     const fragmentRanges = [
-      [1.900, 3.050],  //i
-      [2.950, 3.900],  //I
-      [3.800, 5.000],  //EI
-      [4.800, 5.800],  //e
-      [5.800, 6.900],  //AE
-      [6.800, 7.900],  //schwa
-      [7.800, 8.800],  //schwa HI
-      [8.800, 9.900],  //a
-      [9.800, 10.800], //u
-      [10.800, 11.800],  //BOO u
-      [11.800, 12.800],  //ou
-      [12.800, 13.800],  //o
-      [13.800, 14.800],  //aI
-      [14.800, 15.800],  //au
-      [15.800, 16.800],  //OI
-      [17.400, 17.800],  //p
-      [18.200, 18.800],  //b  
-      [19.400, 19.700],  //t
-      [20.200, 20.700],  //d
-      [21.400, 21.700],  //k
-      [22.300, 22.700],  //g
-      [23.150, 23.550],  //'t̬'
-      [24.000, 24.300],  //'ʔ'
-      [25.000, 25.700],  //'f'
-      [26.000, 26.800],  //'v'
-      [27.000, 27.700],  //'θ'
-      [28.000, 28.900],  //'ð'
-      [29.000, 29.900],  //'s'
-      [30.000, 31.030],  //'z'
-      [31.020, 32.000],  //'ʃ'
-      [32.000, 33.000],  //'ʒ'
-      [33.050, 33.500],  //'h'
-      [33.300, 34.600],  //'tʃ'
-      [35.250, 35.700],  //'dʒ'
-      [36.000, 37.000],  //'m'
-      [37.000, 38.050],  //'n'
-      [38.500, 39.000],  //'ŋ'
-      [39.050, 40.000],  //'l'
-      [40.000, 41.000],  //'r'
-      [41.250, 41.800],  //'w'
-      [42.000, 42.500],  //'j'
-      [43.000, 43.900],  //'ɝ'
-      [44.050, 44.700],  //'ɚ',
-      [45.000, 45.700],  //'ɪr'
-      [46.000, 46.700],  //'ɛr'
-      [47.000, 47.700],  //'ɑr'
-      [48.000, 48.800],  //'ɔr'
-      [48.900, 49.700],  //'aɪr'
+      [1.900, 3.050],  [2.950, 3.900],  [3.800, 5.000],  [4.800, 5.800],  [5.800, 6.900],
+      [6.800, 7.900],  [7.800, 8.800],  [8.800, 9.900],  [9.800, 10.800], [10.800, 11.800],
+      [11.800, 12.800], [12.800, 13.800], [13.800, 14.800], [14.800, 15.800], [15.800, 16.800],
+      [17.400, 17.800], [18.200, 18.800], [19.400, 19.700], [20.200, 20.700], [21.400, 21.700],
+      [22.300, 22.700], [23.150, 23.550], [24.000, 24.300], [25.000, 25.700], [26.000, 26.800],
+      [27.000, 27.700], [28.000, 28.900], [29.000, 29.900], [30.000, 31.030], [31.020, 32.000],
+      [32.000, 33.000], [33.050, 33.500], [33.300, 34.600], [35.250, 35.700], [36.000, 37.000],
+      [37.000, 38.050], [38.500, 39.000], [39.050, 40.000], [40.000, 41.000], [41.250, 41.800],
+      [42.000, 42.500], [43.000, 43.900], [44.050, 44.700], [45.000, 45.700], [46.000, 46.700],
+      [47.000, 47.700], [48.000, 48.800], [48.900, 49.700]
     ];
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -156,7 +140,9 @@
     function playNewSound() {
       currentSoundIndex = Math.floor(Math.random() * ipaSymbols.length);
       playFragment(currentSoundIndex);
-      document.getElementById('feedback').innerText = '';
+      const feedback = document.getElementById('feedback');
+      feedback.innerText = '🎧 Your guess?';
+      feedback.style.opacity = '0.8';
     }
 
     function repeatSound() {
@@ -166,16 +152,28 @@
     }
 
     function guess(symbol) {
+      const feedback = document.getElementById('feedback');
       const correctSymbol = ipaSymbols[currentSoundIndex];
+
       if (symbol === correctSymbol) {
         correct++;
         document.getElementById('correct').innerText = correct;
-        document.getElementById('feedback').innerText = '✅ Correct!';
-        setTimeout(playNewSound, 1000);
+        feedback.innerText = '✅ Correct!';
       } else {
         incorrect++;
         document.getElementById('incorrect').innerText = incorrect;
-        document.getElementById('feedback').innerText = '❌ Try again';
+        feedback.innerText = '❌ Try again';
+      }
+
+      feedback.style.opacity = '1';
+
+      setTimeout(() => {
+        feedback.innerText = '🎧 Your guess?';
+        feedback.style.opacity = '0.8';
+      }, 3000);
+
+      if (symbol === correctSymbol) {
+        setTimeout(playNewSound, 3000);
       }
     }
 
@@ -184,7 +182,7 @@
       const btn = document.createElement('button');
       btn.innerText = symbol;
       btn.onclick = () => guess(symbol);
-      if (index < 13 || index >= ipaSymbols.length - 7) {
+      if (index < 15 || index >= ipaSymbols.length - 7) {
         btn.style.backgroundColor = '#d44';
         btn.style.boxShadow = '0 0 4px #0003';
       }
