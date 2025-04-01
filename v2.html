@@ -73,6 +73,8 @@
 <body>
   <h1>Transcribe the Word to IPA</h1>
   <button onclick="playWord()">🔊 Play Word</button>
+  <button onclick="repeatWord()">🔁 Repeat</button>
+  <button onclick="toggleInfo()">📖 Show Info</button>
   <br/>
   <input type="text" id="ipaInput" placeholder="Write IPA transcription..." />
   <button onclick="checkIPA()">Submit</button>
@@ -89,6 +91,8 @@
   <script>
     let currentWord = '';
     let correctTranscription = '';
+    let currentAudioUrl = '';
+    let wordInfoVisible = false;
 
     const ipaSymbols = ['i', 'ɪ', 'e', 'ɛ', 'æ', 'ə', 'ʌ', 'ɑ', 'u', 'ʊ', 'o', 'ɔ',
                         'aɪ', 'aʊ', 'ɔɪ', 'p', 'b', 't', 'd', 'k', 'g', 'f', 'v',
@@ -129,6 +133,7 @@
     async function playWord() {
       document.getElementById('result').innerText = '';
       document.getElementById('wordInfo').style.display = 'none';
+      wordInfoVisible = false;
       document.getElementById('ipaInput').value = '';
 
       currentWord = await getRandomWord();
@@ -143,20 +148,14 @@
       correctTranscription = wordData.phonetics.find(p => p.text)?.text || '';
       document.getElementById('phonetics').innerText = phonetics;
 
+      // Save audio for repeat button
+      currentAudioUrl = wordData.phonetics.find(p => p.audio)?.audio || '';
+
       // Play audio if available
-      const audioUrl = wordData.phonetics.find(p => p.audio)?.audio;
-      if (audioUrl) {
-        new Audio(audioUrl).play();
-      } else {
-        const fallback = new SpeechSynthesisUtterance(currentWord);
-        fallback.lang = 'en-US';
-        speechSynthesis.speak(fallback);
-      }
+      repeatWord();
 
-      // Show origin if present
+      // Prepare other info (but don't show until requested)
       document.getElementById('origin').innerText = wordData.origin || '—';
-
-      // Meanings
       const meaningsDiv = document.getElementById('meanings');
       meaningsDiv.innerHTML = '';
       wordData.meanings.forEach(m => {
@@ -165,19 +164,36 @@
           m.definitions.map(d => `<p><strong>Definition:</strong> ${d.definition}<br/><em>Example:</em> ${d.example || '—'}</p>`).join('');
         meaningsDiv.appendChild(section);
       });
+    }
 
-      document.getElementById('wordInfo').style.display = 'block';
+    function repeatWord() {
+      if (currentAudioUrl) {
+        new Audio(currentAudioUrl).play();
+      } else if (currentWord) {
+        const fallback = new SpeechSynthesisUtterance(currentWord);
+        fallback.lang = 'en-US';
+        speechSynthesis.speak(fallback);
+      }
+    }
+
+    function toggleInfo() {
+      const info = document.getElementById('wordInfo');
+      wordInfoVisible = !wordInfoVisible;
+      info.style.display = wordInfoVisible ? 'block' : 'none';
     }
 
     function checkIPA() {
-      const userInput = document.getElementById('ipaInput').value.trim();
+      const userInput = document.getElementById('ipaInput').value.trim().replaceAll('/', '');
       const result = document.getElementById('result');
-      if (!correctTranscription) {
+      const correct = correctTranscription.trim().replaceAll('/', '');
+
+      if (!correct) {
         result.innerText = "❗ Load a word first!";
         result.style.color = 'orange';
         return;
       }
-      if (userInput === correctTranscription) {
+
+      if (userInput === correct) {
         result.innerText = "✅ Correct!";
         result.style.color = 'green';
       } else {
