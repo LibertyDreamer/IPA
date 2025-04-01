@@ -54,10 +54,19 @@
       font-size: 18px;
       border-radius: 50%;
     }
-    .definition {
-      margin-top: 1rem;
-      font-style: italic;
-      color: #555;
+    .info {
+      margin-top: 1.5rem;
+      background: #ffffff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+    .info h3 {
+      margin-top: 0.5rem;
     }
   </style>
 </head>
@@ -69,7 +78,13 @@
   <button onclick="checkIPA()">Submit</button>
   <div class="ipa-keyboard" id="ipaKeyboard"></div>
   <div class="result" id="result"></div>
-  <div class="definition" id="definition"></div>
+
+  <div class="info" id="wordInfo" style="display: none">
+    <h2 id="displayWord"></h2>
+    <p><strong>Phonetics:</strong> <span id="phonetics"></span></p>
+    <p><strong>Origin:</strong> <span id="origin"></span></p>
+    <div id="meanings"></div>
+  </div>
 
   <script>
     let currentWord = '';
@@ -96,7 +111,7 @@
     }
 
     async function getRandomWord() {
-      const words = ["cat", "dog", "fish", "phone", "car", "bird", "school", "light", "shoe"];
+      const words = ["cat", "dog", "fish", "phone", "car", "bird", "school", "light", "shoe", "hello"];
       return words[Math.floor(Math.random() * words.length)];
     }
 
@@ -104,36 +119,54 @@
       try {
         const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
         const data = await res.json();
-        const phoneticEntry = data[0].phonetics.find(p => p.text && p.audio);
-        const phoneticText = phoneticEntry?.text || '';
-        const audioUrl = phoneticEntry?.audio || '';
-        const definition = data[0].meanings[0]?.definitions[0]?.definition || '';
-        return { phoneticText, audioUrl, definition };
+        return data[0];
       } catch (err) {
         console.error(err);
-        return { phoneticText: '', audioUrl: '', definition: '' };
+        return null;
       }
     }
 
     async function playWord() {
       document.getElementById('result').innerText = '';
-      document.getElementById('definition').innerText = '';
-      currentWord = await getRandomWord();
-      const data = await fetchWordData(currentWord);
-      correctTranscription = data.phoneticText;
+      document.getElementById('wordInfo').style.display = 'none';
+      document.getElementById('ipaInput').value = '';
 
-      if (data.audioUrl) {
-        const audio = new Audio(data.audioUrl);
-        audio.play();
+      currentWord = await getRandomWord();
+      const wordData = await fetchWordData(currentWord);
+
+      if (!wordData) return;
+
+      document.getElementById('displayWord').innerText = wordData.word;
+
+      // Display phonetics
+      const phonetics = wordData.phonetics.map(p => p.text).filter(Boolean).join(', ');
+      correctTranscription = wordData.phonetics.find(p => p.text)?.text || '';
+      document.getElementById('phonetics').innerText = phonetics;
+
+      // Play audio if available
+      const audioUrl = wordData.phonetics.find(p => p.audio)?.audio;
+      if (audioUrl) {
+        new Audio(audioUrl).play();
       } else {
         const fallback = new SpeechSynthesisUtterance(currentWord);
         fallback.lang = 'en-US';
         speechSynthesis.speak(fallback);
       }
 
-      if (data.definition) {
-        document.getElementById('definition').innerText = `Definition: ${data.definition}`;
-      }
+      // Show origin if present
+      document.getElementById('origin').innerText = wordData.origin || '—';
+
+      // Meanings
+      const meaningsDiv = document.getElementById('meanings');
+      meaningsDiv.innerHTML = '';
+      wordData.meanings.forEach(m => {
+        const section = document.createElement('div');
+        section.innerHTML = `<h3>${m.partOfSpeech}</h3>` +
+          m.definitions.map(d => `<p><strong>Definition:</strong> ${d.definition}<br/><em>Example:</em> ${d.example || '—'}</p>`).join('');
+        meaningsDiv.appendChild(section);
+      });
+
+      document.getElementById('wordInfo').style.display = 'block';
     }
 
     function checkIPA() {
